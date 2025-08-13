@@ -11,6 +11,8 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        'aws-primary': '#232f3e',
+        'aws-secondary': '#ff9900',
       },
     },
   },
