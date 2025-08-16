@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+enum SponsorType {
+  GOLD
+  SILVER
+  COMMUNITY
+  COMMUNITY_EXHIBITOR
+}
+
+model Year {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  venue           Venue?
+  agendas         Agenda[]
+  galleryImages   GalleryImage[]
+  sponsors        Sponsor[]
+  speakers        Speaker[]
+  organizers      Organizer[]
+  volunteers      Volunteer[]
+  contactInfo     ContactInfo?
+  generalSettings GeneralSetting?
+
+  @@index([name], name: "year_name_index")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  role      UserRole @default(EDITOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Agenda {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  yearId      String   @db.ObjectId
+  year        Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  speakerId   String   @db.ObjectId
+  speaker     Speaker  @relation(fields: [speakerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Speaker {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  title     String?
+  photoUrl  String?
+  keyNote   String?
+  agendas   Agenda[]
+  yearId    String   @db.ObjectId
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sponsor {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  logoUrl   String?
+  website   String?
+  type      SponsorType
+  yearId    String      @db.ObjectId
+  year      Year        @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Organizer {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  affiliation String
+  role        String
+  photoUrl    String?
+  yearId      String   @db.ObjectId
+  year        Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Volunteer {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  role      String
+  photoUrl  String?
+  yearId    String   @db.ObjectId
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Venue {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  address     String?
+  city        String
+  region      String
+  description String?
+  latitude    Float
+  longitude   Float
+  mapUrl      String? // Direct link to Google Maps
+  capacity    Int?
+  website     String?
+  contactInfo String?
+  images      String[]
+  yearId      String   @unique @db.ObjectId
+  year        Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl  String
+  yearId    String   @db.ObjectId
+  year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactInfo {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  email   String
+  phone   String?
+  address String?
+  yearId  String  @unique @db.ObjectId
+  year    Year    @relation(fields: [yearId], references: [id], onDelete: Cascade)
+
+  twitterLink   String?
+  facebookLink  String?
+  instagramLink String?
+  linkedinLink  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GeneralSetting {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  rsvpLink      String?
+  rsvpDeadline  DateTime?
+  eventDate     DateTime?
+  maxAttendees  Int?
+  volunteerLink String?
+  sponsorLink   String?
+  speakerLink   String?
+  yearId        String    @unique @db.ObjectId
+  year          Year      @relation(fields: [yearId], references: [id], onDelete: Cascade)
+}
