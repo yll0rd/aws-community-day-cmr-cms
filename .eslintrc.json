@@ -1,3 +1,4 @@
 {
+  "ignorePatterns": ["app/generated/prisma/**"],
   "extends": ["next/core-web-vitals", "next/typescript"]
 }
