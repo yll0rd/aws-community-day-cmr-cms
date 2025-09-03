@@ -1,11 +1,19 @@
 "use client";
 
-import Dashboard from "@/components/Dashboard";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   if (loading) {
     return (
@@ -18,5 +26,5 @@ export default function Home() {
     );
   }
 
-  return user ? <Dashboard /> : <LoginForm />;
+  return <LoginForm />;
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useYear } from '../../contexts/YearContext';
-import { ActiveSection } from '../Dashboard';
 import {
   LayoutDashboard,
   Image,
@@ -22,33 +23,32 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeSection: ActiveSection;
-  setActiveSection: (section: ActiveSection) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
 const menuItems = [
-  { id: 'dashboard', icon: LayoutDashboard, translationKey: 'nav.dashboard' },
-  { id: 'hero', icon: Image, translationKey: 'nav.hero' },
-  { id: 'speakers', icon: Users, translationKey: 'nav.speakers' },
-  { id: 'agenda', icon: Calendar, translationKey: 'nav.agenda' },
-  { id: 'gallery', icon: ImageIcon, translationKey: 'nav.gallery' },
-  { id: 'sponsors', icon: Award, translationKey: 'nav.sponsors' },
-  { id: 'organizers', icon: UserCheck, translationKey: 'nav.organizers' },
-  { id: 'venue', icon: MapPin, translationKey: 'nav.venue' },
-  { id: 'contact', icon: Mail, translationKey: 'nav.contact' },
-  { id: 'settings', icon: Settings, translationKey: 'nav.settings' },
-  { id: 'users', icon: UserCog, translationKey: 'nav.users', adminOnly: true },
+  { id: 'dashboard', href: '/dashboard', icon: LayoutDashboard, translationKey: 'nav.dashboard' },
+  { id: 'hero', href: '/hero', icon: Image, translationKey: 'nav.hero' },
+  { id: 'speakers', href: '/speakers', icon: Users, translationKey: 'nav.speakers' },
+  { id: 'agenda', href: '/agenda', icon: Calendar, translationKey: 'nav.agenda' },
+  { id: 'gallery', href: '/gallery', icon: ImageIcon, translationKey: 'nav.gallery' },
+  { id: 'sponsors', href: '/sponsors', icon: Award, translationKey: 'nav.sponsors' },
+  { id: 'organizers', href: '/organizers', icon: UserCheck, translationKey: 'nav.organizers' },
+  { id: 'venue', href: '/venue', icon: MapPin, translationKey: 'nav.venue' },
+  { id: 'contact', href: '/contact', icon: Mail, translationKey: 'nav.contact' },
+  { id: 'settings', href: '/settings', icon: Settings, translationKey: 'nav.settings' },
+  { id: 'users', href: '/users', icon: UserCog, translationKey: 'nav.users', adminOnly: true },
 ] as const;
 
-export default function Sidebar({ activeSection, setActiveSection, isOpen, setIsOpen }: SidebarProps) {
+export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { currentYear, setYear, availableYears } = useYear();
+  const pathname = usePathname();
 
   const filteredMenuItems = menuItems.filter(item => 
-    !(item.id === "users" && item.adminOnly) || user?.role === 'admin'
+    !item.adminOnly || user?.role === 'admin'
   );
 
   return (
@@ -109,13 +109,13 @@ export default function Sidebar({ activeSection, setActiveSection, isOpen, setIs
             <ul className="space-y-2">
               {filteredMenuItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeSection === item.id;
+                const isActive = pathname === item.href;
                 
                 return (
                   <li key={item.id}>
-                    <button
+                    <Link
+                      href={item.href}
                       onClick={() => {
-                        setActiveSection(item.id as ActiveSection);
                         if (window.innerWidth < 1024) {
                           setIsOpen(false);
                         }
@@ -128,7 +128,7 @@ export default function Sidebar({ activeSection, setActiveSection, isOpen, setIs
                     >
                       <Icon className="w-5 h-5" />
                       <span className="font-medium">{t(item.translationKey)}</span>
-                    </button>
+                    </Link>
                   </li>
                 );
               })}

@@ -46,6 +46,8 @@ model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String   @unique
+  password  String
+  avatar    String?
   role      UserRole @default(EDITOR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -69,6 +71,7 @@ model Speaker {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   title     String?
+  bio       String?
   photoUrl  String?
   keyNote   String?
   agendas   Agenda[]
@@ -136,6 +139,8 @@ model Venue {
 model GalleryImage {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   imageUrl  String
+  caption   String?
+  category  String?
   yearId    String   @db.ObjectId
   year      Year     @relation(fields: [yearId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
