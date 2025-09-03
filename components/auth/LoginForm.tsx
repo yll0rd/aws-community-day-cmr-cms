@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { LogIn, User, Lock, Globe } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,8 @@ export default function LoginForm() {
   const { login } = useAuth();
   const { t, currentLanguage, setLanguage } = useLanguage();
 
+  const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -20,8 +23,9 @@ export default function LoginForm() {
 
     try {
       await login(email, password);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        router.push("/dashboard");
     } catch (err) {
+        console.error("Login error:", err);
       setError('Invalid email or password');
     } finally {
       setLoading(false);
