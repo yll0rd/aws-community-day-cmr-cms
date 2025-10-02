@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from "next/image";
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useYear } from '../../contexts/YearContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useYear } from '@/contexts/YearContext';
 import {
     LayoutDashboard,
-    Image,
+    Image as ImageIconLucide,
     Users,
     Calendar,
     ImageIcon,
@@ -28,23 +29,24 @@ interface SidebarProps {
 }
 
 const menuItems = [
-    { id: 'dashboard', href: '/dashboard', icon: LayoutDashboard, translationKey: 'nav.dashboard' },
-    { id: 'hero', href: '/hero', icon: Image, translationKey: 'nav.hero' },
-    { id: 'speakers', href: '/speakers', icon: Users, translationKey: 'nav.speakers' },
-    { id: 'agenda', href: '/agenda', icon: Calendar, translationKey: 'nav.agenda' },
-    { id: 'gallery', href: '/gallery', icon: ImageIcon, translationKey: 'nav.gallery' },
-    { id: 'sponsors', href: '/sponsors', icon: Award, translationKey: 'nav.sponsors' },
-    { id: 'organizers', href: '/organizers', icon: UserCheck, translationKey: 'nav.organizers' },
-    { id: 'venue', href: '/venue', icon: MapPin, translationKey: 'nav.venue' },
-    { id: 'contact', href: '/contact', icon: Mail, translationKey: 'nav.contact' },
-    { id: 'settings', href: '/settings', icon: Settings, translationKey: 'nav.settings' },
+    { id: 'dashboard', href: '/dashboard', icon: LayoutDashboard, translationKey: 'nav.dashboard', adminOnly: false },
+    // { id: 'hero', href: '/hero', icon: ImageIconLucide, translationKey: 'nav.hero', adminOnly: false },
+    { id: 'speakers', href: '/speakers', icon: Users, translationKey: 'nav.speakers', adminOnly: false },
+    { id: 'agenda', href: '/agenda', icon: Calendar, translationKey: 'nav.agenda', adminOnly: false },
+    { id: 'gallery', href: '/gallery', icon: ImageIcon, translationKey: 'nav.gallery', adminOnly: false },
+    { id: 'sponsors', href: '/sponsors', icon: Award, translationKey: 'nav.sponsors', adminOnly: false },
+    { id: 'organizers', href: '/organizers', icon: UserCheck, translationKey: 'nav.organizers', adminOnly: false },
+    { id: 'volunteers', href: '/volunteers', icon: Users, translationKey: 'nav.volunteers', adminOnly: false },
+    { id: 'venue', href: '/venue', icon: MapPin, translationKey: 'nav.venue', adminOnly: false },
+    { id: 'contact', href: '/contact', icon: Mail, translationKey: 'nav.contact', adminOnly: false },
+    { id: 'settings', href: '/settings', icon: Settings, translationKey: 'nav.settings', adminOnly: false },
     { id: 'users', href: '/users', icon: UserCog, translationKey: 'nav.users', adminOnly: true },
 ] as const;
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     const { user } = useAuth();
     const { t } = useLanguage();
-    const { currentYear, setYear, availableYears } = useYear();
+    const { currentYear, currentYearData, setYear, availableYears, loading } = useYear();
     const pathname = usePathname();
 
     const filteredMenuItems = menuItems.filter(item =>
@@ -75,7 +77,9 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             </div>
                             <div>
                                 <h1 className="text-lg font-semibold text-gray-800">Community CMS</h1>
-                                <p className="text-xs text-gray-500">Cameroon 2025</p>
+                                <p className="text-xs text-gray-500">
+                                    Cameroon {currentYearData?.name || currentYear}
+                                </p>
                             </div>
                         </div>
                         <button
@@ -88,20 +92,30 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
                     {/* Year Selector */}
                     <div className="p-4 border-b border-gray-200">
-                        <div className="relative">
-                            <select
-                                value={currentYear}
-                                onChange={(e) => setYear(Number(e.target.value))}
-                                className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 focus:ring-2 focus:ring-aws-secondary focus:border-transparent appearance-none cursor-pointer"
-                            >
-                                {availableYears.map(year => (
-                                    <option key={year} value={year}>
-                                        AWS Community Day {year}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-                        </div>
+                        {loading ? (
+                            <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-500 text-center">
+                                Loading years...
+                            </div>
+                        ) : availableYears.length > 0 ? (
+                            <div className="relative">
+                                <select
+                                    value={currentYearData?.id || ''}
+                                    onChange={(e) => setYear(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 focus:ring-2 focus:ring-aws-secondary focus:border-transparent appearance-none cursor-pointer"
+                                >
+                                    {availableYears.map(year => (
+                                        <option key={year.id} value={year.id}>
+                                            AWS Community Day {year.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                            </div>
+                        ) : (
+                            <div className="w-full p-3 border border-gray-300 rounded-lg bg-yellow-50 text-sm text-yellow-700 text-center">
+                                No years available
+                            </div>
+                        )}
                     </div>
 
                     {/* Navigation */}
@@ -138,10 +152,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                     {/* User Info */}
                     <div className="p-4 border-t border-gray-200">
                         <div className="flex items-center space-x-3">
-                            <img
+                            <Image
                                 src={user?.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?w=40&h=40&fit=crop'}
-                                alt={user?.name}
-                                className="w-10 h-10 rounded-full object-cover"
+                                alt={user?.name || "User Avatar"}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
                             />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-800 truncate">

@@ -24,6 +24,7 @@ export default function LoginForm() {
     try {
       await login(email, password);
         router.push("/dashboard");
+        window.location.reload();
     } catch (err) {
         console.error("Login error:", err);
       setError('Invalid email or password');
@@ -128,12 +129,6 @@ export default function LoginForm() {
             )}
           </button>
         </form>
-
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-          <p className="font-medium mb-2">Demo Credentials:</p>
-          <p>Admin: admin@awscommunity.cm / admin123</p>
-          <p>Editor: editor@awscommunity.cm / editor123</p>
-        </div>
       </div>
     </div>
   );

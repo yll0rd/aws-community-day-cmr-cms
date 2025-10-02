@@ -9,13 +9,16 @@ import {
     User,
     Upload,
     Globe,
-    Award
+    Award,
+    X,
+    RefreshCw
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useYear } from '@/contexts/YearContext';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Image from 'next/image';
 
 interface Speaker {
     id: string;
@@ -31,38 +34,52 @@ interface Speaker {
 
 export default function SpeakersManager() {
     const { t, currentLanguage } = useLanguage();
-    const { currentYear } = useYear();
+    const { currentYearData, loading: yearLoading, refreshYears } = useYear();
     const [speakers, setSpeakers] = useState<Speaker[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingSpeaker, setEditingSpeaker] = useState<Speaker | null>(null);
     const [formLoading, setFormLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
         name: '',
         title: '',
         bio: '',
-        photoUrl: '',
         keyNote: ''
     });
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string>('');
+    const [removePhoto, setRemovePhoto] = useState(false);
 
+    // Fetch speakers when currentYearData changes
     useEffect(() => {
-        fetchSpeakers();
-    }, [currentYear]);
+        if (currentYearData) {
+            console.log('Current year changed:', currentYearData.name, currentYearData.id);
+            fetchSpeakers();
+        } else {
+            setSpeakers([]);
+            setLoading(false);
+        }
+    }, [currentYearData]);
 
     const fetchSpeakers = async () => {
+        if (!currentYearData) {
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
-            // For now, we'll use a mock year ID since we need to implement year management
-            const mockYearId = '507f1f77bcf86cd799439011';
-            const response = await api.getSpeakers(mockYearId);
+            console.log('Fetching speakers for year:', currentYearData.id);
+            const response = await api.getSpeakers(currentYearData.id);
 
             if (response.error) {
                 toast.error(response.error);
             } else {
-                setSpeakers(response.data?.speakers || []);
+                setSpeakers(response.data || []);
             }
         } catch (error) {
             toast.error('Failed to fetch speakers');
@@ -74,17 +91,38 @@ export default function SpeakersManager() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!currentYearData) {
+            toast.error('No year selected');
+            return;
+        }
+
         setFormLoading(true);
 
         try {
-            const mockYearId = '507f1f77bcf86cd799439011';
-            const speakerData = { ...formData, yearId: mockYearId };
+            const formDataToSend = new FormData();
+
+            // Append text fields
+            formDataToSend.append('name', formData.name);
+            formDataToSend.append('title', formData.title);
+            formDataToSend.append('bio', formData.bio);
+            formDataToSend.append('keyNote', formData.keyNote);
+            formDataToSend.append('yearId', currentYearData.id); // Use dynamic year ID
+
+            // Handle photo
+            if (photoFile) {
+                formDataToSend.append('photo', photoFile);
+            }
+
+            if (removePhoto && editingSpeaker?.photoUrl) {
+                formDataToSend.append('removePhoto', 'true');
+            }
 
             let response;
             if (editingSpeaker) {
-                response = await api.updateSpeaker(editingSpeaker.id, speakerData);
+                response = await api.updateSpeakerWithPhoto(editingSpeaker.id, formDataToSend);
             } else {
-                response = await api.createSpeaker(speakerData);
+                response = await api.createSpeakerWithPhoto(formDataToSend);
             }
 
             if (response.error) {
@@ -122,19 +160,36 @@ export default function SpeakersManager() {
         }
     };
 
-    const handleFileUpload = async (file: File) => {
-        try {
-            const response = await api.uploadFile(file, 'speakers');
-            if (response.error) {
-                toast.error(response.error);
-            } else {
-                setFormData(prev => ({ ...prev, photoUrl: response.url }));
-                toast.success('Image uploaded successfully');
-            }
-        } catch (error) {
-            toast.error('Failed to upload image');
-            console.error('Error uploading image:', error);
+    const handleFileSelect = (file: File) => {
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error('Invalid file type. Please select an image (JPEG, PNG, GIF, WebP).');
+            return;
         }
+
+        // Validate file size (5MB max)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            toast.error('File size too large. Maximum size is 5MB.');
+            return;
+        }
+
+        setPhotoFile(file);
+        setRemovePhoto(false);
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setPhotoPreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemovePhoto = () => {
+        setPhotoFile(null);
+        setPhotoPreview('');
+        setRemovePhoto(true);
     };
 
     const resetForm = () => {
@@ -142,9 +197,11 @@ export default function SpeakersManager() {
             name: '',
             title: '',
             bio: '',
-            photoUrl: '',
             keyNote: ''
         });
+        setPhotoFile(null);
+        setPhotoPreview('');
+        setRemovePhoto(false);
     };
 
     const openEditForm = (speaker: Speaker) => {
@@ -153,9 +210,21 @@ export default function SpeakersManager() {
             name: speaker.name,
             title: speaker.title || '',
             bio: speaker.bio || '',
-            photoUrl: speaker.photoUrl || '',
             keyNote: speaker.keyNote || ''
         });
+        setPhotoPreview(speaker.photoUrl || '');
+        setRemovePhoto(false);
+        setShowForm(true);
+    };
+
+    const openAddForm = () => {
+        if (!currentYearData) {
+            toast.error('Please select a year first');
+            return;
+        }
+
+        setEditingSpeaker(null);
+        resetForm();
         setShowForm(true);
     };
 
@@ -163,6 +232,36 @@ export default function SpeakersManager() {
         speaker.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (speaker.title && speaker.title.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    // Show loading state when year is loading
+    if (yearLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+                <LoadingSpinner size="lg" />
+                <span className="text-gray-600 text-lg">Loading year information...</span>
+            </div>
+        );
+    }
+
+    // Show message if no year is available
+    if (!currentYearData) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 space-y-6">
+                <User className="w-16 h-16 text-gray-300" />
+                <h2 className="text-2xl font-bold text-gray-800">No Event Year Found</h2>
+                <p className="text-gray-600 text-center max-w-md">
+                    No event year has been set up yet. Please run the database seeder or create a year in the admin panel first.
+                </p>
+                <button
+                    onClick={refreshYears}
+                    className="flex items-center space-x-2 bg-aws-primary text-white px-6 py-3 rounded-lg hover:bg-aws-primary/90"
+                >
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Refresh</span>
+                </button>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -179,19 +278,48 @@ export default function SpeakersManager() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">{t('nav.speakers')}</h1>
-                    <p className="text-gray-600 mt-2">Manage speakers for AWS Community Day {currentYear}</p>
+                    <p className="text-gray-600 mt-2">
+                        Managing speakers for AWS Community Day {currentYearData.name}
+                    </p>
                 </div>
-                <button
-                    onClick={() => {
-                        resetForm();
-                        setEditingSpeaker(null);
-                        setShowForm(true);
-                    }}
-                    className="flex items-center space-x-2 bg-aws-primary text-white px-6 py-3 rounded-lg hover:bg-aws-primary/90"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Add Speaker</span>
-                </button>
+                <div className="flex items-center space-x-3">
+                    <button
+                        onClick={refreshYears}
+                        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Refresh</span>
+                    </button>
+                    <button
+                        onClick={openAddForm}
+                        className="flex items-center space-x-2 bg-aws-primary text-white px-6 py-3 rounded-lg hover:bg-aws-primary/90"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Add Speaker</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Year Info Banner */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-aws-primary rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm">Y</span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-gray-800">
+                                Currently managing: <span className="text-aws-primary">AWS Community Day {currentYearData.name}</span>
+                            </p>
+                            <p className="text-xs text-gray-600">
+                                Year ID: {currentYearData.id.slice(-8)}...
+                            </p>
+                        </div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                        {speakers.length} speaker{speakers.length !== 1 ? 's' : ''} found
+                    </div>
+                </div>
             </div>
 
             {/* Search */}
@@ -203,7 +331,7 @@ export default function SpeakersManager() {
                         placeholder="Search speakers..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
+                        className="w-full pl-10 text-gray-700 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
                     />
                 </div>
             </div>
@@ -214,10 +342,11 @@ export default function SpeakersManager() {
                     <div key={speaker.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="relative h-48 bg-gray-200">
                             {speaker.photoUrl ? (
-                                <img
+                                <Image
                                     src={speaker.photoUrl}
                                     alt={speaker.name}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
@@ -226,10 +355,10 @@ export default function SpeakersManager() {
                             )}
                             {speaker.keyNote && (
                                 <div className="absolute top-3 left-3">
-                  <span className="bg-aws-secondary text-white px-2 py-1 text-xs font-medium rounded-full flex items-center space-x-1">
-                    <Award className="w-3 h-3" />
-                    <span>Keynote</span>
-                  </span>
+                                    <span className="bg-aws-secondary text-white px-2 py-1 text-xs font-medium rounded-full flex items-center space-x-1">
+                                        <Award className="w-3 h-3" />
+                                        <span>Keynote</span>
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -283,11 +412,7 @@ export default function SpeakersManager() {
                     </p>
                     {!searchTerm && (
                         <button
-                            onClick={() => {
-                                resetForm();
-                                setEditingSpeaker(null);
-                                setShowForm(true);
-                            }}
+                            onClick={openAddForm}
                             className="bg-aws-primary text-white px-6 py-3 rounded-lg hover:bg-aws-primary/90"
                         >
                             Add First Speaker
@@ -300,7 +425,7 @@ export default function SpeakersManager() {
             {showForm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold mb-4">
+                        <h2 className="text-xl text-gray-700 font-bold mb-4">
                             {editingSpeaker ? 'Edit Speaker' : 'Add New Speaker'}
                         </h2>
 
@@ -313,7 +438,7 @@ export default function SpeakersManager() {
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
+                                    className="w-full px-4 py-3 text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
                                     required
                                 />
                             </div>
@@ -326,7 +451,7 @@ export default function SpeakersManager() {
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
+                                    className="w-full px-4 py-3 text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
                                 />
                             </div>
 
@@ -338,40 +463,73 @@ export default function SpeakersManager() {
                                     rows={4}
                                     value={formData.bio}
                                     onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
+                                    className="w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
                                 />
                             </div>
 
+                            {/* Year Info (Read-only) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Photo
+                                    Event Year
                                 </label>
-                                <div className="flex items-center space-x-4">
-                                    {formData.photoUrl && (
-                                        <img
-                                            src={formData.photoUrl}
-                                            alt="Speaker photo"
-                                            className="w-16 h-16 object-cover rounded-lg"
-                                        />
+                                <div className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-700">
+                                    AWS Community Day {currentYearData.name}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Speaker is automatically associated with the current event year
+                                </p>
+                            </div>
+
+                            {/* Photo Upload Section */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Speaker Photo
+                                </label>
+                                <div className="space-y-4">
+                                    {/* Photo Preview */}
+                                    {(photoPreview || (editingSpeaker?.photoUrl && !removePhoto)) && (
+                                        <div className="relative inline-block">
+                                            <div className="w-32 h-32 rounded-lg overflow-hidden border border-gray-300">
+                                                <Image
+                                                    src={photoPreview || editingSpeaker?.photoUrl || ''}
+                                                    alt="Speaker preview"
+                                                    width={128}
+                                                    height={128}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleRemovePhoto}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     )}
-                                    <div className="flex-1">
+
+                                    {/* File Upload */}
+                                    <div>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
-                                                if (file) handleFileUpload(file);
+                                                if (file) handleFileSelect(file);
                                             }}
                                             className="hidden"
                                             id="photo-upload"
                                         />
                                         <label
                                             htmlFor="photo-upload"
-                                            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                                            className="flex items-center text-gray-700 space-x-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-aws-primary hover:bg-gray-50 cursor-pointer transition-colors"
                                         >
-                                            <Upload className="w-4 h-4" />
-                                            <span>Upload Photo</span>
+                                            <Upload className="w-5 h-5" />
+                                            <span>Choose Photo</span>
                                         </label>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            JPEG, PNG, GIF, WebP. Max 5MB.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -396,7 +554,7 @@ export default function SpeakersManager() {
                                         setEditingSpeaker(null);
                                         resetForm();
                                     }}
-                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    className="flex-1 px-4 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                                 >
                                     Cancel
                                 </button>

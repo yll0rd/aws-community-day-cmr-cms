@@ -10,6 +10,7 @@ import {
   Globe
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Image from 'next/image';
 
 interface HeroBanner {
   id: string;
@@ -110,11 +111,16 @@ export default function HeroManager() {
           <div key={banner.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             {/* Banner Image */}
             <div className="relative h-48 bg-gray-200">
-              <img
-                src={banner.image}
-                alt={banner.title[currentLanguage]}
-                className="w-full h-full object-cover"
-              />
+                <Image
+                    src={banner.image}
+                    alt={banner.title[currentLanguage]}
+                    fill   // 👈 makes the image cover the parent
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw,
+                       (max-width: 1200px) 50vw,
+                       33vw"
+                    priority={banner.order === 1} // 👈 optional: preload first banner
+                />
               <div className="absolute top-3 right-3 flex space-x-2">
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   banner.published 

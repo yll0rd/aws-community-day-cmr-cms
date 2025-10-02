@@ -1,8 +1,11 @@
 // lib/api.ts
-interface ApiResponse<T = any> {
+import {headers} from "next/headers";
+
+interface ApiResponse<T> {
     data?: T;
     error?: string;
 }
+
 
 class ApiClient {
     private baseUrl = '/api';
@@ -51,23 +54,31 @@ class ApiClient {
     }
 
     // Speakers
+
+    async createSpeakerWithPhoto(data: FormData) {
+        return this.request('/speakers', {
+            method: 'POST',
+            body: data,
+            headers: {
+                // No Content-Type for FormData - browser will set it with boundary
+            },
+        });
+    }
+
+    async updateSpeakerWithPhoto(id: string, data: FormData) {
+        return this.request(`/speakers/${id}`, {
+            method: 'PUT',
+            body: data,
+            headers: {
+                // No Content-Type for FormData
+            },
+        });
+    }
+
     async getSpeakers(yearId: string) {
         return this.request(`/speakers?yearId=${yearId}`);
     }
 
-    async createSpeaker(data: any) {
-        return this.request('/speakers', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateSpeaker(id: string, data: any) {
-        return this.request(`/speakers/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
 
     async deleteSpeaker(id: string) {
         return this.request(`/speakers/${id}`, { method: 'DELETE' });
@@ -93,7 +104,9 @@ class ApiClient {
     }
 
     async deleteAgendaItem(id: string) {
-        return this.request(`/agenda/${id}`, { method: 'DELETE' });
+        return this.request(`/agenda?id=${id}`, {
+            method: 'DELETE'
+        });
     }
 
     // Gallery
@@ -140,6 +153,191 @@ class ApiClient {
 
     async deleteYear(id: string) {
         return this.request(`/years/${id}`, { method: 'DELETE' });
+    }
+
+    // Sponsors
+    async getSponsors(yearId: string) {
+        return this.request(`/sponsors?yearId=${yearId}`);
+    }
+
+    async createSponsorWithLogo(data: FormData) {
+        return this.request('/sponsors', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateSponsorWithLogo(id: string, data: FormData) {
+        return this.request(`/sponsors/${id}`, {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteSponsor(id: string) {
+        return this.request(`/sponsors/${id}`, { method: 'DELETE' });
+    }
+
+    // Organizers
+    async getOrganizers(yearId: string) {
+        return this.request(`/organizers?yearId=${yearId}`);
+    }
+
+    async createOrganizerWithPhoto(data: FormData) {
+        return this.request('/organizers', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateOrganizerWithPhoto(id: string, data: FormData) {
+        return this.request(`/organizers/${id}`, {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteOrganizer(id: string) {
+        return this.request(`/organizers/${id}`, { method: 'DELETE' });
+    }
+
+    // Volunteers
+    async getVolunteers(yearId: string) {
+        return this.request(`/volunteers?yearId=${yearId}`);
+    }
+
+    async createVolunteerWithPhoto(data: FormData) {
+        return this.request('/volunteers', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateVolunteerWithPhoto(id: string, data: FormData) {
+        return this.request(`/volunteers/${id}`, {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteVolunteer(id: string) {
+        return this.request(`/volunteers/${id}`, { method: 'DELETE' });
+    }
+
+    async getVenue(yearId: string) {
+        return this.request(`/venue?yearId=${yearId}`);
+    }
+
+    async createVenue(data: FormData) {
+        return this.request('/venue', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateVenue(data: FormData) {
+        return this.request('/venue', {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteVenue(yearId: string) {
+        return this.request(`/venue?yearId=${yearId}`, { method: 'DELETE' });
+    }
+
+    // Contact Info
+    async getContactInfo(yearId: string) {
+        return this.request(`/contact?yearId=${yearId}`);
+    }
+
+    async createContactInfo(data: FormData) {
+        return this.request('/contact', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateContactInfo(data: FormData) {
+        return this.request('/contact', {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteContactInfo(yearId: string) {
+        return this.request(`/contact?yearId=${yearId}`, { method: 'DELETE' });
+    }
+
+    // General Settings
+    async getSettings(yearId: string) {
+        return this.request(`/settings?yearId=${yearId}`);
+    }
+
+    async createSettings(data: FormData) {
+        return this.request('/settings', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateSettings(data: FormData) {
+        return this.request('/settings', {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteSettings(yearId: string) {
+        return this.request(`/settings?yearId=${yearId}`, { method: 'DELETE' });
+    }
+
+    // Users Management (Admin only)
+    async getUsers() {
+        return this.request('/users');
+    }
+
+    async getUser(id: string) {
+        return this.request(`/users/${id}`);
+    }
+
+    async createUser(data: FormData) {
+        return this.request('/users', {
+            method: 'POST',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async updateUser(id: string, data: FormData) {
+        return this.request(`/users/${id}`, {
+            method: 'PUT',
+            body: data,
+            headers: {}
+        });
+    }
+
+    async deleteUser(id: string) {
+        return this.request(`/users/${id}`, { method: 'DELETE' });
+    }
+
+    // Dashboard
+    async getDashboardData(yearId: string) {
+        return this.request(`/dashboard?yearId=${yearId}`, {
+            headers: {}
+        });
     }
 
     // File upload (special handling for FormData)
