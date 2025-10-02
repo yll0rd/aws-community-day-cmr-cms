@@ -8,27 +8,29 @@ export function middleware(request: NextRequest) {
     // Public routes that don't require authentication
     const publicRoutes = ['/', '/login'];
 
-    // API routes that don't require authentication
-    const publicApiRoutes = ['/api/auth/login', '/api/auth/me'];
+    // Auth-related API routes that are always public
+    const authApiRoutes = ['/api/auth/login', '/api/auth/me'];
 
-    // Check if the route is public
-    if (publicRoutes.includes(pathname) || publicApiRoutes.includes(pathname)) {
+    // Check if it's a public page or auth API route
+    if (publicRoutes.includes(pathname) || authApiRoutes.some(route => pathname.startsWith(route))) {
         return NextResponse.next();
     }
 
-    // Check for authentication token (just check if it exists)
+    // Allow public access to ALL GET requests (read operations)
+    if (pathname.startsWith('/api/') && request.method === 'GET') {
+        return NextResponse.next();
+    }
+
+    // Check for authentication token (for non-GET API requests and protected pages)
     const token = request.cookies.get('auth-token')?.value;
 
     if (!token) {
-        // Redirect to login for protected routes
         if (pathname.startsWith('/api/')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         return NextResponse.redirect(new URL('/', request.url));
     }
 
-    // Token exists, let the request continue
-    // The actual token verification will happen in the API routes
     return NextResponse.next();
 }
 
