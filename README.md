@@ -400,4 +400,4 @@ For issues and questions:
 
 ---
 
-**Built with ❤️ for AWS Community Day Cameroon by [Traitz Tech](https://https://traitz.tech) led by [@JuniorDCoder](https://juniorgnu.netlify.app/) and significant contributions from [@yll0rd](https://github.com/yll0rd).**
+**Built with ❤️ for AWS Community Day Cameroon by [Traitz Tech](https://traitz.tech) led by [@JuniorDCoder](https://juniorgnu.netlify.app/) and significant contributions from [@yll0rd](https://github.com/yll0rd).**
