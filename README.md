@@ -1,204 +1,403 @@
-# AWS Community Day CMS 🚀
+# AWS Community Day Cameroon - CMS
 
-A modern, responsive Content Management System built for managing AWS Community Day events. This CMS provides an intuitive dashboard for event organizers to manage speakers, agenda, gallery, sponsors, and venue information.
+A comprehensive Content Management System built with Next.js 14, TypeScript, Prisma, and MongoDB for managing AWS Community Day events in Cameroon.
 
-## ✨ Features
+## 🚀 Features
 
-### 🔐 Authentication & Authorization
-- **Role-based access control** with Admin and Editor roles
-- **Secure login system** with session management
-- **User profile management** with avatars
+- **Multi-Year Event Management** - Manage multiple event years with year-specific content
+- **Speaker Management** - Add, edit, and showcase event speakers
+- **Agenda Management** - Create and organize event schedules with sessions
+- **Gallery Management** - Upload images to AWS S3 and organize event photos
+- **Sponsor Management** - Manage event sponsors with tier categorization
+- **Venue Management** - Configure venue information and details
+- **User Management** - Admin user authentication and authorization
+- **Multilingual Support** - English and French language support
+- **Responsive Design** - Mobile-friendly admin interface
 
-### 📊 Dashboard & Analytics
-- **Comprehensive dashboard** with real-time statistics
-- **Activity tracking** and recent updates overview
-- **Multi-language support** (English & French)
-- **Year-based event management**
+## 📋 Prerequisites
 
-### 🎯 Content Management
-- **Hero Section Manager** - Manage banner images and hero content
-- **Speaker Management** - Add, edit, and organize speaker profiles
-- **Agenda Manager** - Schedule events and manage program timeline
-- **Gallery Manager** - Upload and organize event photos
-- **Sponsor Management** - Manage sponsor information and logos
-- **Venue Manager** - Configure venue details and location info
-- **Contact Manager** - Manage contact information and inquiries
-- **User Management** - Admin controls for user accounts
+Before you begin, ensure you have the following installed:
 
-### 🌐 Internationalization
-- **Multi-language support** with context-based translations
-- **Language switcher** in the header
-- **Localized content management**
+- **Node.js** (v18 or higher)
+- **npm** (comes with Node.js)
+- **MongoDB** (local installation or MongoDB Atlas account)
+- **AWS Account** (for S3 image storage)
+- **Git**
 
-### 🎨 Modern UI/UX
-- **Responsive design** that works on all devices
-- **Clean, modern interface** built with Tailwind CSS
-- **Intuitive navigation** with collapsible sidebar
-- **Loading states** and smooth transitions
-- **AWS-themed styling** with custom color palette
+## 🛠️ Installation & Setup
 
-## 🛠️ Tech Stack
+### 1. Clone the Repository
+```
+bash
+git clone https://github.com/yll0rd/aws-community-day-cmr-cms.git
+cd aws-community-day-cmr-cms
+```
+### 2. Install Dependencies
+```
+bash
+npm install
+```
+### 3. Environment Variables Setup
 
-- **Framework**: [Next.js 14](https://nextjs.org/) with App Router
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **State Management**: React Context API
-- **Authentication**: Custom auth context with localStorage
-- **Development**: ESLint for code quality
+Create a `.env` file in the root directory. You can use `.env.example` as a template:
+```
+bash
+cp .env.example .env.local
+```
+Now configure the following environment variables inside a .env file:
 
-## 🚀 Getting Started
+#### **Database Configuration**
+```
+env
+# MongoDB Connection String
+# For local MongoDB:
+DATABASE_URL="mongodb://localhost:27017/aws-community-cms"
 
-### Prerequisites
+# For MongoDB Atlas (recommended for production):
+DATABASE_URL="mongodb+srv://<username>:<password>@<cluster>.mongodb.net/aws-community-cms?retryWrites=true&w=majority"
+```
+**How to get MongoDB Atlas URL:**
+1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a free cluster
+3. Click "Connect" → "Connect your application"
+4. Copy the connection string and replace `<username>`, `<password>`, and `<cluster>`
 
-- Node.js 18+ 
-- npm or yarn package manager
+**How to Generate a secure JWT secret for .env.local:**
+```
+bash
+# On Linux/Mac:
+openssl rand -base64 32
 
-### Installation
+# Or use Node.js:
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+#### **AWS S3 Configuration**
+```
+env
+# AWS S3 Configuration for image uploads
+NEXT_PUBLIC_AWS_S3_REGION="us-east-1"
+NEXT_PUBLIC_AWS_S3_BUCKET_NAME="your-bucket-name"
+NEXT_PUBLIC_AWS_S3_ACCESS_ID="your-aws-access-key-id"
+NEXT_PUBLIC_AWS_S3_SECRET_KEY="your-aws-secret-access-key"
+```
+**How to get AWS S3 credentials:**
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd aws_cms
+1. **Create an S3 Bucket:**
+   - Log in to [AWS Console](https://console.aws.amazon.com/)
+   - Go to S3 service
+   - Click "Create bucket"
+   - Choose a unique bucket name (e.g., `aws-cmr-community-day`)
+   - Select a region (e.g., `us-east-1`)
+   - Uncheck "Block all public access" (required for public image URLs)
+   - Click "Create bucket"
+
+2. **Configure Bucket CORS:**
+   - Go to your bucket → Permissions → CORS
+   - Add this configuration:
+   ```json
+   [
+     {
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+       "AllowedOrigins": ["*"],
+       "ExposeHeaders": []
+     }
+   ]
    ```
 
-2. **Install dependencies**
-   ```bash
-   npm install
+3. **Create IAM User for Programmatic Access:**
+    - Go to IAM service → Users → Add users
+    - User name: `aws-cms-uploader`
+    - Check "Access key - Programmatic access"
+    - Click "Next: Permissions"
+    - Click "Attach existing policies directly"
+    - Search and select `AmazonS3FullAccess` (or create a custom policy for your bucket only)
+    - Click through to create user
+    - **IMPORTANT:** Copy the Access Key ID and Secret Access Key (you can't see the secret again)
+
+4. **Add credentials to `.env`:**
+   ```env
+   NEXT_PUBLIC_AWS_S3_ACCESS_ID="AKIAIOSFODNN7EXAMPLE"
+   NEXT_PUBLIC_AWS_S3_SECRET_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
    ```
 
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+#### **Complete `.env.local` Example**
 
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+```env
+# Database
+DATABASE_URL="mongodb+srv://admin:password123@cluster0.abc123.mongodb.net/aws-community-cms?retryWrites=true&w=majority"
 
-### Available Scripts
+# Authentication
+JWT_SECRET="aB3dF6hJ9kL2mN5pQ8rS1tV4wX7yZ0aC3eF6gI9jK2m"
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build the application for production
-- `npm run start` - Start the production server
-- `npm run lint` - Run ESLint for code quality checks
+# AWS S3
+NEXT_PUBLIC_AWS_S3_REGION="us-east-1"
+NEXT_PUBLIC_AWS_S3_BUCKET_NAME="aws-bucket-name"
+NEXT_PUBLIC_AWS_S3_ACCESS_ID="AKIAIOSFODNN7EXAMPLE"
+NEXT_PUBLIC_AWS_S3_SECRET_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
-## 🔑 Default Login Credentials
+# Public variables (for URL construction)
+NEXT_PUBLIC_AWS_S3_BUCKET_NAME=
+NEXT_PUBLIC_AWS_S3_REGION=
 
-For development and testing purposes, use these credentials:
+# User Credentials for Seeding
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+ADMIN_NAME=
 
-**Admin User:**
-- Email: `admin@awscommunity.cm`
-- Password: `admin123`
-- Role: Admin (full access)
+EDITOR_EMAIL=
+EDITOR_PASSWORD=
+EDITOR_NAME=
+```
 
-**Editor User:**
-- Email: `editor@awscommunity.cm`
-- Password: `editor123`
-- Role: Editor (limited access)
+
+### 4. Database Setup
+
+Initialize Prisma and create the database schema:
+
+```shell script
+# Generate Prisma Client
+npx prisma generate
+
+# Push schema to database
+npx prisma db push
+```
+
+
+### 5. Seed Database (Optional but Recommended)
+
+Seed the database with initial data including a default admin user and sample year:
+
+```shell script
+ npm run seed
+```
+
+
+**⚠️ IMPORTANT:** Change these credentials immediately after first login!
+
+### 6. Run Development Server
+
+```shell script
+  npm run dev
+```
+
+
+The application will be available at [http://localhost:3000](http://localhost:3000)
 
 ## 📁 Project Structure
 
 ```
-aws_cms/
-├── app/                    # Next.js app directory
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout component
-│   ├── page.tsx           # Main page component
-│   └── fonts/             # Custom fonts (Geist)
-├── components/            # React components
-│   ├── Dashboard.tsx      # Main dashboard component
-│   ├── auth/              # Authentication components
-│   ├── layout/            # Layout components (Header, Sidebar)
-│   └── pages/             # Page-specific components
-├── contexts/              # React contexts
-│   ├── AuthContext.tsx    # Authentication state
-│   ├── LanguageContext.tsx# Internationalization
-│   └── YearContext.tsx    # Year management
-├── hooks/                 # Custom React hooks
-└── public/               # Static assets
+aws-community-day-cmr-cms/
+├── app/                      # Next.js 14 App Router
+│   ├── (dashboard)/         # Dashboard pages (admin routes)
+│   ├── api/                 # API routes
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Home/login page
+├── components/              # React components
+│   ├── auth/               # Authentication components
+│   ├── layout/             # Layout components (sidebar, header)
+│   ├── pages/              # Page-specific components (managers)
+│   └── ui/                 # Reusable UI components
+├── contexts/               # React contexts
+│   ├── AuthContext.tsx     # Authentication state
+│   ├── LanguageContext.tsx # i18n state
+│   └── YearContext.tsx     # Year selection state
+├── lib/                    # Utility libraries
+│   ├── s3/                 # AWS S3 utilities
+│   ├── api.ts              # API client functions
+│   ├── auth.ts             # Authentication utilities
+│   ├── db.ts               # Prisma client
+│   └── validation.ts       # Form validation
+├── prisma/                 # Prisma ORM
+│   └── schema.prisma       # Database schema
+├── scripts/                # Utility scripts
+│   └── seed.ts             # Database seeding
+├── .env                    # Environment variables (create this)
+├── .env.example            # Environment template
+|── .env.local              # Created when you run cp .env.example
+├── package.json            # Dependencies
+└── README.md              # This file
 ```
 
-## 🌍 Internationalization
 
-The CMS supports multiple languages:
+## 🔐 Authentication
 
-- **English** (default)
-- **French** (Français)
+The CMS uses JWT-based authentication with HTTP-only cookies for security.
 
-Language context provides:
-- Dynamic translation system
-- Language switcher in header
-- Persistent language selection
-- Extensible translation keys
+### First Login
 
-## 🎨 Design System
+1. Navigate to [http://localhost:3000](http://localhost:3000)
+2. Use the credentials (if you ran the seed script):
+3. You'll be redirected to the dashboard
 
-### Color Palette
-- **Primary**: AWS Orange theme
-- **Secondary**: Complementary colors
-- **UI**: Neutral grays for interface elements
-- **Status**: Success, warning, and error states
+### Creating Additional Users
 
-### Typography
-- **Primary Font**: Geist Sans
-- **Monospace**: Geist Mono
-- **Responsive scaling** across devices
+1. Go to **Users** in the sidebar
+2. Click **Add User**
+3. Fill in user details
+4. Set role (admin/editor/viewer)
+5. Save
 
-## 🔧 Configuration
+## 📸 Image Upload Setup
 
-### Environment Setup
-The application uses local storage for session management and mock data for development. For production deployment, consider integrating with:
+All images (speakers, gallery, sponsors, etc.) are uploaded to AWS S3.
 
-- **Database**: PostgreSQL, MongoDB, or AWS DynamoDB
-- **Authentication**: AWS Cognito, Auth0, or NextAuth.js
-- **File Storage**: AWS S3 for image uploads
-- **Analytics**: AWS CloudWatch or Google Analytics
+### Testing Image Upload
 
-### Customization
-- **Branding**: Update colors in `tailwind.config.ts`
-- **Translations**: Add new languages in `LanguageContext.tsx`
-- **Features**: Extend managers in `components/pages/`
+1. Go to **Gallery** in the sidebar
+2. Click **Add Image**
+3. Try uploading a test image
+4. If successful, you should see the image with an S3 URL
 
-## 📱 Responsive Design
+### Troubleshooting Image Upload
 
-The CMS is fully responsive and optimized for:
-- **Desktop**: Full-featured dashboard experience
-- **Tablet**: Optimized touch interface
-- **Mobile**: Collapsible navigation and touch-friendly controls
+If images fail to upload:
+
+1. **Check S3 bucket permissions:**
+    - Bucket must allow public read access
+    - CORS must be configured correctly
+
+2. **Verify AWS credentials:**
+    - Access Key ID and Secret Key must be valid
+    - IAM user must have S3 write permissions
+
+3. **Check browser console:**
+    - Look for CORS or 403 errors
+    - Verify the bucket name and region are correct
+
+## 🌍 Managing Event Years
+
+The CMS is designed to manage multiple event years:
+
+1. Go to **Settings** or use the year selector in the header
+2. Create a new year for each event (e.g., 2024, 2025)
+3. All content (speakers, agenda, gallery) is tied to a specific year
+4. Switch between years using the year selector
+
+## 📝 Available Scripts
+
+```shell script
+# Development
+ npm run dev              # Start development server
+
+# Production
+ npm run build           # Build for production
+ npm run start           # Start production server
+
+# Database
+ npm run postinstall     # Generate Prisma client and push schema
+ npm run seed            # Seed database with initial data
+
+# Linting
+ npm run lint            # Run ESLint
+```
+
+
+## 🚀 Deployment
+
+### Prerequisites for Deployment
+
+1. MongoDB database (MongoDB Atlas recommended)
+2. AWS S3 bucket configured
+3. All environment variables set
+
+### Deploy to Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Go to [Vercel](https://vercel.com)
+3. Import your repository
+4. Add environment variables in Vercel dashboard
+5. Deploy
+
+**Environment Variables on Vercel:**
+- Add all variables from your `.env` file
+- Go to Project Settings → Environment Variables
+- Add each variable one by one
+
+### Deploy to Other Platforms
+
+The application can be deployed to any platform that supports Node.js:
+- AWS Amplify
+- Netlify
+- Railway
+- Render
+- DigitalOcean App Platform
+
+## 🔒 Security Notes
+
+1. **Never commit `.env` to Git** - It's already in `.gitignore`
+2. **Change default admin password** immediately after setup
+3. **Use strong JWT secret** in production (32+ characters)
+4. **Enable HTTPS** in production
+5. **Regularly update dependencies** for security patches
+6. **Limit S3 bucket permissions** to only what's needed
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+
+```shell script
+# Test MongoDB connection
+npx prisma studio
+```
+
+
+If this fails:
+- Check MongoDB is running (local) or Atlas cluster is active
+- Verify DATABASE_URL is correct
+- Check network/firewall settings
+
+### Build Errors
+
+```shell script
+# Clear Next.js cache
+rm -rf .next
+
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+
+# Regenerate Prisma Client
+npx prisma generate
+```
+
+
+### Image Upload Fails
+
+1. Check AWS credentials in `.env`
+2. Verify S3 bucket exists and is publicly accessible
+3. Check browser console for specific errors
+4. Test AWS credentials using AWS CLI
+
+## 📚 Additional Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- [AWS S3 Documentation](https://docs.aws.amazon.com/s3/)
+- [Tailwind CSS](https://tailwindcss.com/docs)
 
 ## 🤝 Contributing
 
+Contributions are welcome! Please follow these steps:
+
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
-## 🎯 Future Enhancements
+## 💬 Support
 
-- [ ] **Database Integration** - Replace mock data with real database
-- [ ] **File Upload System** - Implement image upload functionality
-- [ ] **Real-time Updates** - Add WebSocket support for live updates
-- [ ] **Email Notifications** - Integrate email system for user management
-- [ ] **Advanced Analytics** - Enhanced dashboard metrics and reporting
-- [ ] **Export Features** - Export data to various formats (PDF, CSV)
-- [ ] **API Integration** - RESTful API for external integrations
-- [ ] **Mobile App** - React Native companion app
-
-## 🆘 Support
-
-For support and questions:
-
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation in the `/docs` folder
+For issues and questions:
+- Open an issue on GitHub
+- Contact the AWS Community Day Cameroon team
 
 ---
 
-**Built with ❤️ for the AWS Community Day Cameroon 2025**
-
-*This CMS is designed to streamline event management and provide a seamless experience for both organizers and attendees.*
+**Built with ❤️ for AWS Community Day Cameroon by [Traitz Tech](https://https://traitz.tech) led by [@JuniorDCoder](https://juniorgnu.netlify.app/) and significant contributions from [@yll0rd](https://github.com/yll0rd).**

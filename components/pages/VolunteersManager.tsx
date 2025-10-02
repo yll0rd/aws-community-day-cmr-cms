@@ -52,7 +52,7 @@ export default function VolunteersManager() {
     useEffect(() => {
         if (currentYearData) {
             console.log('Current year changed:', currentYearData.name, currentYearData.id);
-            fetchVolunteers();
+            fetchVolunteers()
         } else {
             setVolunteers([]);
             setLoading(false);
