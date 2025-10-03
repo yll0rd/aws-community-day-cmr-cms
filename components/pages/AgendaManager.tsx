@@ -174,9 +174,15 @@ export default function AgendaManager() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this agenda item?')) return;
+
+        console.log('Attempting to delete agenda item with ID:', id);
+
         try {
             const res = await api.deleteAgendaItem(id);
+            console.log('Delete response:', res);
+
             if (res.error) {
+                console.error('Delete error:', res.error);
                 toast.error(res.error);
             } else {
                 toast.success("Agenda item deleted successfully");

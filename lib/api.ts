@@ -104,10 +104,9 @@ class ApiClient {
     }
 
     async deleteAgendaItem(id: string) {
-        return this.request(`/agenda?id=${id}`, {
-            method: 'DELETE'
-        });
+        return this.request(`/agenda/${id}`, { method: 'DELETE' });
     }
+
 
     // Gallery
     async getGalleryImages(yearId: string) {

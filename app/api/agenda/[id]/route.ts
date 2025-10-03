@@ -78,17 +78,24 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     try {
+        console.log('DELETE request received for agenda ID:', params.id);
+        console.log('Request URL:', request.url);
+
         const authResult = await verifyAuth(request);
         if (!authResult.success) {
+            console.log('Auth failed:', authResult.error);
             return NextResponse.json({ error: authResult.error }, { status: 401 });
         }
 
         if (!params.id) {
+            console.log('No agenda ID provided');
             return NextResponse.json({ error: 'Agenda ID is required' }, { status: 400 });
         }
 
+        console.log('Deleting agenda item:', params.id);
         await db.agenda.delete({ where: { id: params.id } });
 
+        console.log('Agenda item deleted successfully');
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting agenda:', error);

@@ -542,7 +542,7 @@ export default function SpeakersManager() {
                                     type="text"
                                     value={formData.keyNote}
                                     onChange={(e) => setFormData(prev => ({ ...prev, keyNote: e.target.value }))}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
+                                    className="w-full px-4 text-aws-primary py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-aws-secondary focus:border-transparent"
                                 />
                             </div>
 
